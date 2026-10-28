@@ -4,7 +4,6 @@ import { supabase } from '../lib/supabase.js'
 import { api } from '../lib/api.js'
 import { DOC_TYPES } from '../lib/docTypes.js'
 
-const input = 'w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500'
 const EMPTY = { member_id: '', doc_type: '', doc_number: '', expiry_date: '', tags: '' }
 
 export default function UploadForm({ members, onSaved }) {
@@ -87,14 +86,14 @@ export default function UploadForm({ members, onSaved }) {
     setBusy(false)
   }
 
-  if (members.length === 0) return <p className="text-slate-500">Add a family member first, then upload their documents.</p>
+  if (members.length === 0) return <p className="text-muted">Add a family member first, then upload their documents.</p>
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-3 rounded-2xl bg-white p-4 shadow sm:grid-cols-2">
-      <label className="space-y-1 sm:col-span-2">
-        <span className="text-sm text-slate-700">File (photo or PDF)</span>
+    <form onSubmit={handleSubmit} className="card grid gap-4 p-4 sm:grid-cols-2 sm:p-5">
+      <label className="space-y-1.5 sm:col-span-2">
+        <span className="label">File (photo or PDF)</span>
         <input
-          className={`${input} file:mr-3 file:rounded file:border-0 file:bg-indigo-50 file:px-3 file:py-1 file:text-indigo-700`}
+          className="field h-auto py-2.5 file:mr-3 file:rounded-md file:border-0 file:bg-paper file:px-3 file:py-1.5 file:font-mono file:text-xs file:font-semibold file:uppercase"
           type="file"
           required
           accept="image/*,application/pdf"
@@ -103,46 +102,36 @@ export default function UploadForm({ members, onSaved }) {
       </label>
       {/* Gemini reads images only, so PDFs are filled in by hand. */}
       {file?.type.startsWith('image/') && (
-        <button
-          type="button"
-          onClick={handleAutoFill}
-          disabled={filling}
-          className="rounded-lg border border-indigo-300 bg-indigo-50 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50 sm:col-span-2"
-        >
-          {filling ? 'Reading document…' : '✨ Auto-fill with AI'}
+        <button type="button" onClick={handleAutoFill} disabled={filling} className="btn-ghost border-accent text-accent sm:col-span-2">
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.8z" /><path d="M19 15l.8 2.2 2.2.8-2.2.8L19 21l-.8-2.2-2.2-.8 2.2-.8z" /></svg>
+          {filling ? 'Reading document…' : 'Auto-fill with AI'}
         </button>
       )}
-      <label className="space-y-1">
-        <span className="text-sm text-slate-700">Family member</span>
-        <select className={input} required value={form.member_id} onChange={set('member_id')}>
+      <label className="space-y-1.5">
+        <span className="label">Family member</span>
+        <select className="field" required value={form.member_id} onChange={set('member_id')}>
           <option value="">Choose…</option>
           {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
         </select>
       </label>
-      <label className="space-y-1">
-        <span className="text-sm text-slate-700">Document type</span>
-        <select className={input} required value={form.doc_type} onChange={set('doc_type')}>
+      <label className="space-y-1.5">
+        <span className="label">Document type</span>
+        <select className="field" required value={form.doc_type} onChange={set('doc_type')}>
           <option value="">Choose…</option>
           {DOC_TYPES.map((t) => <option key={t}>{t}</option>)}
         </select>
       </label>
-      <label className="space-y-1">
-        <span className="text-sm text-slate-700">Document number</span>
-        <input className={input} value={form.doc_number} onChange={set('doc_number')} />
+      <label className="space-y-1.5">
+        <span className="label">Document number</span>
+        <input className="field font-mono" value={form.doc_number} onChange={set('doc_number')} />
       </label>
-      <div className="space-y-1">
-        <label htmlFor="expiry_date" className="text-sm text-slate-700">Expiry date</label>
-        <input
-          id="expiry_date"
-          className={`${input} disabled:bg-slate-100 disabled:text-slate-400`}
-          type="date"
-          disabled={noExpiry}
-          value={form.expiry_date}
-          onChange={set('expiry_date')}
-        />
-        <label className="flex items-center gap-2 text-sm text-slate-600">
+      <div className="space-y-1.5">
+        <label htmlFor="expiry_date" className="label">Expiry date</label>
+        <input id="expiry_date" className="field" type="date" disabled={noExpiry} value={form.expiry_date} onChange={set('expiry_date')} />
+        <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-sm text-muted">
           <input
             type="checkbox"
+            className="size-5 accent-ink"
             checked={noExpiry}
             onChange={(e) => {
               setNoExpiry(e.target.checked)
@@ -152,13 +141,13 @@ export default function UploadForm({ members, onSaved }) {
           No expiry date (Aadhaar, birth certificate…)
         </label>
       </div>
-      <label className="space-y-1 sm:col-span-2">
-        <span className="text-sm text-slate-700">Tags (comma separated)</span>
-        <input className={input} value={form.tags} onChange={set('tags')} placeholder="original, travel" />
+      <label className="space-y-1.5 sm:col-span-2">
+        <span className="label">Tags (comma separated)</span>
+        <input className="field" value={form.tags} onChange={set('tags')} placeholder="original, travel" />
       </label>
 
-      {error && <p role="alert" className="text-sm text-red-600 sm:col-span-2">{error}</p>}
-      <button disabled={busy || !file} className="rounded-lg bg-indigo-600 py-2 font-medium text-white hover:bg-indigo-700 disabled:opacity-50 sm:col-span-2">
+      {error && <p role="alert" className="text-sm text-danger sm:col-span-2">{error}</p>}
+      <button disabled={busy || !file} className="btn sm:col-span-2">
         {busy ? 'Saving…' : 'Save document'}
       </button>
     </form>

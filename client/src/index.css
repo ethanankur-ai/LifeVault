@@ -1,2 +1,67 @@
-/* Global styles. This one line pulls in all of Tailwind; style components with class names. */
+/* Global styles: Tailwind plus the "Dossier" theme, a family file cabinet look. */
 @import "tailwindcss";
+
+/* Theme tokens. Each one becomes Tailwind classes too: bg-paper, text-ink, border-line, text-danger, font-mono… */
+@theme {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --color-paper: #ECEEF1;
+  --color-ink: #1B1F24;
+  --color-muted: #4B5563;
+  --color-line: #C9CED6;
+  --color-accent: #2541B2;
+  --color-slip: #FFF0B3;
+  --color-ok: #087443;
+  --color-warn: #B54708;
+  --color-danger: #C01048;
+}
+
+@layer base {
+  body { @apply bg-paper font-sans text-ink; }
+  :focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
+}
+
+@layer components {
+  /* Text inputs and dropdowns. */
+  .field {
+    @apply h-12 w-full rounded-[10px] border-[1.5px] border-line bg-white px-3.5 text-base text-ink transition
+      placeholder:text-muted focus:border-accent focus:ring-4 focus:ring-accent/15 focus:outline-none
+      disabled:bg-paper disabled:text-muted;
+  }
+  /* Our own arrow with room around it; the browser's arrow sits right against the border. */
+  select.field {
+    @apply cursor-pointer appearance-none pr-11;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231B1F24' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center / 18px;
+  }
+  /* Small uppercase typewriter labels. */
+  .label { @apply font-mono text-[11px] font-semibold tracking-[0.14em] text-muted uppercase; }
+  .btn {
+    @apply inline-flex h-12 items-center justify-center gap-2 rounded-[10px] bg-ink px-5 font-semibold text-white transition
+      hover:bg-black active:scale-[.97] disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-[10px] border-[1.5px] border-line bg-white px-4 font-semibold text-ink transition
+      hover:border-ink active:scale-[.97] disabled:opacity-50;
+  }
+  .card { @apply rounded-[14px] bg-white shadow-[0_1px_0_#D5D9DF,0_8px_20px_-14px_rgba(27,31,36,.3)]; }
+  /* Rubber-stamp status label; set its colour with text-* and border-* classes. */
+  .stamp {
+    @apply inline-block shrink-0 rounded border-2 px-1.5 py-0.5 font-mono text-[11px] font-semibold tracking-wide whitespace-nowrap uppercase;
+    transform: rotate(-4deg);
+    animation: stamp 0.45s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+  }
+}
+
+/* Animations. Delays are set per item in JSX (style={{ animationDelay }}) to stagger lists. */
+.rise { animation: rise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.slip { transform: rotate(-1deg); animation: slip 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes rise { from { opacity: 0; transform: translateY(18px); } }
+@keyframes stamp {
+  0% { opacity: 0; transform: rotate(-4deg) scale(1.9); }
+  70% { opacity: 1; transform: rotate(-4deg) scale(0.94); }
+}
+@keyframes slip { from { opacity: 0; transform: translateY(-14px) rotate(-3deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after { animation: none !important; transition: none !important; }
+}

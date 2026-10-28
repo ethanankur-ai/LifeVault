@@ -16,8 +16,9 @@ lifevault/
   client/            React + Vite + Tailwind
     src/
       App.jsx              login gate + tabs (Documents, Add document, Checklists, Members)
-      lib/                 supabase.js (browser client), api.js (calls our API with the token), docTypes.js
-      components/          one file per screen/panel
+      index.css            Tailwind + the "Dossier" theme: colours, fonts, shared classes, animations
+      lib/                 supabase.js (browser client), api.js (calls our API with the token), docTypes.js, dates.js
+      components/          one file per screen/panel, plus FolderTabs (menu and member filters)
   supabase/schema.sql      tables, security rules, storage bucket
 ```
 

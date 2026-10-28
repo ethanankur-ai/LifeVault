@@ -3,9 +3,15 @@
 import { useEffect, useState } from 'react'
 import { api } from '../lib/api.js'
 import { SCENARIOS } from '../lib/docTypes.js'
+import { today } from '../lib/dates.js'
+import FolderTabs from './FolderTabs.jsx'
 
-const input = 'w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500'
-const today = new Date().toISOString().slice(0, 10)
+// Rubber-stamp text and colour per checklist status.
+const STAMP = {
+  ready: ['Ready', 'border-ok text-ok'],
+  expired: ['Expired', 'border-warn text-warn'],
+  missing: ['Missing', 'border-danger text-danger'],
+}
 
 export default function Scenarios({ members }) {
   const [picked, setPicked] = useState('')
@@ -25,7 +31,7 @@ export default function Scenarios({ members }) {
     return () => { ignore = true }
   }, [memberId])
 
-  if (members.length === 0) return <p className="text-slate-500">Add a family member first.</p>
+  if (members.length === 0) return <p className="text-muted">Add a family member first.</p>
   // Still showing the previous member's documents → treat as loading.
   const docs = loaded.memberId === memberId ? loaded.docs : null
 
@@ -35,45 +41,51 @@ export default function Scenarios({ members }) {
     if (ofType.length === 0) return 'missing'
     return ofType.some((d) => !d.expiry_date || d.expiry_date >= today) ? 'ready' : 'expired'
   }
-  const LABEL = {
-    ready: ['✅', 'Ready', 'text-green-700'],
-    expired: ['⚠️', 'Expired', 'text-amber-700'],
-    missing: ['❌', 'Missing', 'text-red-700'],
-  }
+  const items = docs && SCENARIOS[scenario].map((type) => ({ type, status: status(type) }))
+  const ready = items?.filter((i) => i.status === 'ready').length
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
+      <div role="group" aria-label="Situation" className="flex flex-wrap gap-2">
         {Object.keys(SCENARIOS).map((s) => (
           <button
             key={s}
             onClick={() => setScenario(s)}
             aria-pressed={scenario === s}
-            className={`rounded-full border px-4 py-1.5 text-sm ${scenario === s ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'}`}
+            className={`min-h-11 rounded-[10px] border-[1.5px] px-4 text-sm font-semibold transition active:scale-[.97] ${scenario === s ? 'border-ink bg-ink text-white' : 'border-line bg-white hover:border-ink'}`}
           >
             {s}
           </button>
         ))}
       </div>
-      <select className={`${input} sm:w-64`} aria-label="Member" value={memberId} onChange={(e) => setPicked(e.target.value)}>
-        {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-      </select>
+      <FolderTabs label="Member" tabs={members.map((m) => ({ value: m.id, label: m.name, color: m.color }))} value={memberId} onChange={setPicked} />
 
-      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-      {docs === null ? (
-        <p className="text-slate-500">Loading…</p>
+      {error && <p role="alert" className="text-sm text-danger">{error}</p>}
+      {items === null ? (
+        <p className="label">Loading…</p>
       ) : (
-        <ul className="divide-y divide-slate-200 rounded-2xl bg-white shadow">
-          {SCENARIOS[scenario].map((type) => {
-            const [icon, text, color] = LABEL[status(type)]
-            return (
-              <li key={type} className="flex justify-between px-4 py-3">
-                <span className="text-slate-800">{type}</span>
-                <span className={`text-sm font-medium ${color}`}>{icon} {text}</span>
-              </li>
-            )
-          })}
-        </ul>
+        <>
+          <div className="card space-y-2.5 p-4">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="label">{scenario}</p>
+              <p className="font-mono text-sm font-semibold uppercase">{ready} of {items.length} ready</p>
+            </div>
+            <div role="progressbar" aria-label="Documents ready" aria-valuemin={0} aria-valuemax={items.length} aria-valuenow={ready} className="h-2 overflow-hidden rounded-full bg-paper">
+              <div className="h-2 rounded-full bg-ink transition-[width] duration-500" style={{ width: `${(ready / items.length) * 100}%` }} />
+            </div>
+          </div>
+          <ul className="space-y-2.5">
+            {items.map(({ type, status }, i) => {
+              const [text, color] = STAMP[status]
+              return (
+                <li key={type} className="rise card flex items-center justify-between gap-3 px-4 py-3.5" style={{ animationDelay: `${i * 60}ms` }}>
+                  <span className="font-semibold">{type}</span>
+                  <span className={`stamp ${color}`} style={{ animationDelay: `${i * 60 + 250}ms` }}>{text}</span>
+                </li>
+              )
+            })}
+          </ul>
+        </>
       )}
     </div>
   )
