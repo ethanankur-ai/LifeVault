@@ -64,10 +64,12 @@ export default function DocumentList({ members }) {
                 </p>
                 <p className="break-all text-sm text-slate-600">{d.doc_number || 'No number'}</p>
                 <div className="flex flex-wrap gap-1 text-xs">
-                  {d.expiry_date && (
+                  {d.expiry_date ? (
                     <span className={`rounded px-2 py-0.5 ${d.expiry_date < today ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'}`}>
                       {d.expiry_date < today ? 'Expired' : 'Expires'} {d.expiry_date}
                     </span>
+                  ) : (
+                    <span className="rounded bg-slate-100 px-2 py-0.5 text-slate-500">No expiry</span>
                   )}
                   {d.tags.map((t) => <span key={t} className="rounded bg-indigo-50 px-2 py-0.5 text-indigo-700">{t}</span>)}
                 </div>

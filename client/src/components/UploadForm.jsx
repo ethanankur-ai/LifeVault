@@ -14,6 +14,7 @@ export default function UploadForm({ members, onSaved }) {
   const [busy, setBusy] = useState(false)
 
   const [filling, setFilling] = useState(false)
+  const [noExpiry, setNoExpiry] = useState(false)
 
   const set = (field) => (e) => setForm({ ...form, [field]: e.target.value })
 
@@ -32,7 +33,8 @@ export default function UploadForm({ members, onSaved }) {
       })
       const found = await api('/api/extract', { method: 'POST', body: { image } })
       // A date input only accepts YYYY-MM-DD; anything else would be invisible but still sent on save.
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(found.expiry_date)) found.expiry_date = ''
+      // "No expiry" ticked by the user wins over whatever Gemini thinks it read.
+      if (noExpiry || !/^\d{4}-\d{2}-\d{2}$/.test(found.expiry_date)) found.expiry_date = ''
       const filled = Object.fromEntries(
         ['doc_type', 'doc_number', 'expiry_date'].filter((k) => found[k]).map((k) => [k, found[k]]),
       )
@@ -75,6 +77,7 @@ export default function UploadForm({ members, onSaved }) {
       }
 
       setForm(EMPTY)
+      setNoExpiry(false)
       setFile(null)
       e.target.reset() // clears the file input, which React doesn't control
       onSaved()
@@ -127,10 +130,28 @@ export default function UploadForm({ members, onSaved }) {
         <span className="text-sm text-slate-700">Document number</span>
         <input className={input} value={form.doc_number} onChange={set('doc_number')} />
       </label>
-      <label className="space-y-1">
-        <span className="text-sm text-slate-700">Expiry date</span>
-        <input className={input} type="date" value={form.expiry_date} onChange={set('expiry_date')} />
-      </label>
+      <div className="space-y-1">
+        <label htmlFor="expiry_date" className="text-sm text-slate-700">Expiry date</label>
+        <input
+          id="expiry_date"
+          className={`${input} disabled:bg-slate-100 disabled:text-slate-400`}
+          type="date"
+          disabled={noExpiry}
+          value={form.expiry_date}
+          onChange={set('expiry_date')}
+        />
+        <label className="flex items-center gap-2 text-sm text-slate-600">
+          <input
+            type="checkbox"
+            checked={noExpiry}
+            onChange={(e) => {
+              setNoExpiry(e.target.checked)
+              if (e.target.checked) setForm({ ...form, expiry_date: '' }) // saved as null
+            }}
+          />
+          No expiry date (Aadhaar, birth certificate…)
+        </label>
+      </div>
       <label className="space-y-1 sm:col-span-2">
         <span className="text-sm text-slate-700">Tags (comma separated)</span>
         <input className={input} value={form.tags} onChange={set('tags')} placeholder="original, travel" />
