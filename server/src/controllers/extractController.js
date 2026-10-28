@@ -5,6 +5,10 @@ import { GoogleGenAI } from '@google/genai';
 
 const EMPTY = { doc_type: '', doc_number: '', expiry_date: '', name: '' };
 
+// Same list as client/src/lib/docTypes.js (keep them in sync), so the answer matches the form's dropdown.
+const DOC_TYPES = ['Aadhaar', 'PAN card', 'Passport', 'Birth certificate', 'Driving licence', 'Voter ID',
+  'Insurance policy', 'Medical report', 'School record', 'Photo', 'Other'];
+
 const PROMPT = `This is a photo of a personal or household document (passport, PAN card, Aadhaar,
 driving licence, insurance policy, etc.). Return the document type, the document number,
 the expiry date as YYYY-MM-DD, and the holder's full name. Use "" for anything you cannot read.`;
@@ -27,7 +31,7 @@ export async function extract(req, res) {
         responseJsonSchema: {
           type: 'object',
           properties: {
-            doc_type: { type: 'string' },
+            doc_type: { type: 'string', enum: [...DOC_TYPES, ''] },
             doc_number: { type: 'string' },
             expiry_date: { type: 'string' },
             name: { type: 'string' },

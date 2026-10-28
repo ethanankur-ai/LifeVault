@@ -13,7 +13,36 @@ export default function UploadForm({ members, onSaved }) {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
+  const [filling, setFilling] = useState(false)
+
   const set = (field) => (e) => setForm({ ...form, [field]: e.target.value })
+
+  // Sends the photo to POST /api/extract (Gemini). The server returns "" for anything it couldn't
+  // read, so we only overwrite fields that came back filled in.
+  async function handleAutoFill() {
+    setFilling(true)
+    setError('')
+    try {
+      // shortcut: sends the full-size photo; downscale with a canvas if large phone photos hit the 10mb body limit.
+      const image = await new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result) // "data:image/jpeg;base64,..."
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+      const found = await api('/api/extract', { method: 'POST', body: { image } })
+      // A date input only accepts YYYY-MM-DD; anything else would be invisible but still sent on save.
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(found.expiry_date)) found.expiry_date = ''
+      const filled = Object.fromEntries(
+        ['doc_type', 'doc_number', 'expiry_date'].filter((k) => found[k]).map((k) => [k, found[k]]),
+      )
+      setForm((f) => ({ ...f, ...filled }))
+      if (Object.keys(filled).length === 0) setError("Auto-fill couldn't read this image. Please type the details.")
+    } catch (err) {
+      setError(err.message)
+    }
+    setFilling(false)
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -69,6 +98,17 @@ export default function UploadForm({ members, onSaved }) {
           onChange={(e) => setFile(e.target.files[0] ?? null)}
         />
       </label>
+      {/* Gemini reads images only, so PDFs are filled in by hand. */}
+      {file?.type.startsWith('image/') && (
+        <button
+          type="button"
+          onClick={handleAutoFill}
+          disabled={filling}
+          className="rounded-lg border border-indigo-300 bg-indigo-50 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50 sm:col-span-2"
+        >
+          {filling ? 'Reading document…' : '✨ Auto-fill with AI'}
+        </button>
+      )}
       <label className="space-y-1">
         <span className="text-sm text-slate-700">Family member</span>
         <select className={input} required value={form.member_id} onChange={set('member_id')}>
