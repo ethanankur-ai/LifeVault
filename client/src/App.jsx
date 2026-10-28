@@ -6,6 +6,7 @@ import Login from './components/Login.jsx'
 import Members from './components/Members.jsx'
 import UploadForm from './components/UploadForm.jsx'
 import DocumentList from './components/DocumentList.jsx'
+import ExpiringPanel from './components/ExpiringPanel.jsx'
 
 const TABS = ['Documents', 'Add document', 'Members']
 
@@ -64,7 +65,12 @@ function App() {
 
       <main className="mx-auto max-w-4xl space-y-4 p-4">
         {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-        {tab === 'Documents' && <DocumentList members={members} />}
+        {tab === 'Documents' && (
+          <>
+            <ExpiringPanel members={members} />
+            <DocumentList members={members} />
+          </>
+        )}
         {tab === 'Add document' && <UploadForm members={members} onSaved={() => setTab('Documents')} />}
         {tab === 'Members' &&<Members members={members} onChange={loadMembers} />}
       </main>
