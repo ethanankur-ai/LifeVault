@@ -5,6 +5,9 @@ import { GoogleGenAI } from '@google/genai';
 
 const EMPTY = { doc_type: '', doc_number: '', expiry_date: '', name: '' };
 
+// Tried in order (see the loop in extract below).
+const MODELS = ['gemini-3.5-flash', 'gemini-3.5-flash-lite'];
+
 // Same list as client/src/lib/docTypes.js (keep them in sync), so the answer matches the form's dropdown.
 const DOC_TYPES = ['Aadhaar', 'PAN card', 'Passport', 'Birth certificate', 'Driving licence', 'Voter ID',
   'Insurance policy', 'Medical report', 'School record', 'Photo', 'Other'];
@@ -20,29 +23,34 @@ export async function extract(req, res) {
   if (!match) return res.status(400).json({ error: 'image must be a base64 image data URL' });
   const [, mimeType, data] = match;
 
-  try {
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
-      contents: [{ inlineData: { mimeType, data } }, { text: PROMPT }],
-      config: {
-        // Makes Gemini reply with JSON in exactly this shape instead of free text.
-        responseMimeType: 'application/json',
-        responseJsonSchema: {
-          type: 'object',
-          properties: {
-            doc_type: { type: 'string', enum: [...DOC_TYPES, ''] },
-            doc_number: { type: 'string' },
-            expiry_date: { type: 'string' },
-            name: { type: 'string' },
+  // The free tier often answers 503 "high demand" for one model while another still works,
+  // so try each in turn, giving each 15 s before moving on.
+  for (const model of MODELS) {
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const response = await ai.models.generateContent({
+        model,
+        contents: [{ inlineData: { mimeType, data } }, { text: PROMPT }],
+        config: {
+          abortSignal: AbortSignal.timeout(15_000),
+          // Makes Gemini reply with JSON in exactly this shape instead of free text.
+          responseMimeType: 'application/json',
+          responseJsonSchema: {
+            type: 'object',
+            properties: {
+              doc_type: { type: 'string', enum: [...DOC_TYPES, ''] },
+              doc_number: { type: 'string' },
+              expiry_date: { type: 'string' },
+              name: { type: 'string' },
+            },
+            required: Object.keys(EMPTY),
           },
-          required: Object.keys(EMPTY),
         },
-      },
-    });
-    res.json({ ...EMPTY, ...JSON.parse(response.text) });
-  } catch (err) {
-    console.error('Gemini extract failed:', err.message);
-    res.json(EMPTY);
+      });
+      return res.json({ ...EMPTY, ...JSON.parse(response.text) });
+    } catch (err) {
+      console.error(`Gemini extract with ${model} failed:`, err.message);
+    }
   }
+  res.json(EMPTY);
 }
