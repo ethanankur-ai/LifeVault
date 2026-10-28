@@ -1,0 +1,20 @@
+{
+  "name": "lifevault-server",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node --test",
+    "dev": "nodemon --env-file=.env src/index.js",
+    "start": "node --env-file=.env src/index.js"
+  },
+  "type": "module",
+  "dependencies": {
+    "@google/genai": "^2.31.0",
+    "@supabase/supabase-js": "^2.118.0",
+    "cors": "^2.8.6",
+    "express": "^5.3.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  },
+  "private": true
+}

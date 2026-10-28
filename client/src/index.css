@@ -1,0 +1,2 @@
+/* Global styles. This one line pulls in all of Tailwind; style components with class names. */
+@import "tailwindcss";
