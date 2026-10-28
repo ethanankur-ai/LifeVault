@@ -7,8 +7,9 @@ import Members from './components/Members.jsx'
 import UploadForm from './components/UploadForm.jsx'
 import DocumentList from './components/DocumentList.jsx'
 import ExpiringPanel from './components/ExpiringPanel.jsx'
+import Scenarios from './components/Scenarios.jsx'
 
-const TABS = ['Documents', 'Add document', 'Members']
+const TABS = ['Documents', 'Add document', 'Checklists', 'Members']
 
 function App() {
   // undefined = still checking, null = logged out, object = logged in
@@ -72,7 +73,8 @@ function App() {
           </>
         )}
         {tab === 'Add document' && <UploadForm members={members} onSaved={() => setTab('Documents')} />}
-        {tab === 'Members' &&<Members members={members} onChange={loadMembers} />}
+        {tab === 'Checklists' && <Scenarios members={members} />}
+        {tab === 'Members' && <Members members={members} onChange={loadMembers} />}
       </main>
     </div>
   )

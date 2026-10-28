@@ -13,3 +13,10 @@ export const DOC_TYPES = [
   'Photo',
   'Other',
 ]
+
+// Scenario checklists: which document types each situation usually needs.
+export const SCENARIOS = {
+  'School admission': ['Birth certificate', 'Aadhaar', 'Photo', 'School record'],
+  'Hospital visit': ['Aadhaar', 'Insurance policy', 'Medical report'],
+  'Passport renewal': ['Passport', 'Aadhaar', 'PAN card', 'Photo'],
+}
