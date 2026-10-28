@@ -8,8 +8,8 @@ import extractRoutes from './routes/extract.js';
 
 const app = express();
 
-// The Vite dev server runs on a different port (= different origin), so the browser needs CORS permission.
-app.use(cors({ origin: 'http://localhost:5173' }));
+// The frontend runs on a different origin (Vite dev server, or Vercel in production), so the browser needs CORS permission.
+app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }));
 // Parses JSON request bodies into req.body. 10mb because /api/extract receives base64 images.
 app.use(express.json({ limit: '10mb' }));
 

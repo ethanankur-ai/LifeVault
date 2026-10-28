@@ -13,7 +13,11 @@ lifevault/
       routes/              URL → controller mapping
       controllers/         the actual logic for each route
     test/auth.test.js      smoke test: routes reject requests without a token
-  client/            React + Vite + Tailwind (UI not built yet)
+  client/            React + Vite + Tailwind
+    src/
+      App.jsx              login gate + tabs (Documents, Add document, Checklists, Members)
+      lib/                 supabase.js (browser client), api.js (calls our API with the token), docTypes.js
+      components/          one file per screen/panel
   supabase/schema.sql      tables, security rules, storage bucket
 ```
 
@@ -44,6 +48,7 @@ npm run dev              # http://localhost:4000, restarts on file changes (node
 ```bash
 cd client
 npm install
+cp .env.example .env     # Supabase URL + anon key, API URL
 npm run dev              # http://localhost:5173
 ```
 
@@ -89,7 +94,21 @@ Every `/api` route needs a logged-in user's token.
 - The database's Row Level Security policies (in `schema.sql`) only return rows from the user's
   own family. The API code never filters by family; the database does it, so a forgotten filter can't leak data.
 
-## Uploading files (for when you build the UI)
+## Deploy
+
+Push the repo to GitHub first; both hosts deploy from it.
+
+**API on Render**: New → Web Service → pick the repo.
+- Root directory `server`, build command `npm install`, start command `npm start`
+- Environment: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `GEMINI_API_KEY` (optional), `CLIENT_ORIGIN` = your Vercel URL (no trailing slash; set it after the Vercel deploy)
+- Render sets `PORT` itself. The free tier sleeps when idle; the first request can take ~50 s.
+
+**Frontend on Vercel**: Add New → Project → pick the repo.
+- Root directory `client` (Vercel detects Vite)
+- Environment: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL` = your Render URL (no trailing slash)
+- Vite bakes these in at build time: after changing them, redeploy.
+
+## Uploading files
 
 The browser uploads directly to Supabase Storage. Use the bucket `documents` and the path
 `<family_id>/<file name>`; the storage policy rejects any other folder. Then call `POST /api/documents`
