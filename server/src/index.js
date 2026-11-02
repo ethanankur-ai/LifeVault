@@ -32,6 +32,9 @@ app.use((err, req, res, next) => {
   res.status(status).json({ error: status === 500 ? 'Internal server error' : err.message });
 });
 
+// On Vercel, Vercel runs this exported app itself (VERCEL is set there), so we only listen locally.
+export default app;
+
 const port = process.env.PORT || 4000;
 // Exported so the test can shut it down.
-export const server = app.listen(port, () => console.log(`LifeVault API on http://localhost:${port}`));
+export const server = process.env.VERCEL ? null : app.listen(port, () => console.log(`LifeVault API on http://localhost:${port}`));

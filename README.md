@@ -104,17 +104,19 @@ Every `/api` route needs a logged-in user's token.
 
 ## Deploy
 
-Push the repo to GitHub first; both hosts deploy from it.
+Push the repo to GitHub first. Both parts go on Vercel's free Hobby plan as two projects from the same
+repo (Add New → Project, import the repo twice). Vercel only uses environment variables in new deploys,
+so redeploy after changing one.
 
-**API on Render**: New → Web Service → pick the repo.
-- Root directory `server`, build command `npm install`, start command `npm start`
-- Environment: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `GEMINI_API_KEY` (optional), `CLIENT_ORIGIN` = your Vercel URL (no trailing slash; set it after the Vercel deploy)
-- Render sets `PORT` itself. The free tier sleeps when idle; the first request can take ~50 s.
+**API**: root directory `server`. Vercel detects Express from `src/index.js`; leave the build settings.
+- Environment: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `GEMINI_API_KEY` (optional), `CLIENT_ORIGIN` = the frontend URL (no trailing slash; set it after the frontend deploy)
+- The API runs as one Vercel Function, which accepts requests up to 4.5 MB. That's why Auto-fill shrinks photos before sending them.
 
-**Frontend on Vercel**: Add New → Project → pick the repo.
-- Root directory `client` (Vercel detects Vite)
-- Environment: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL` = your Render URL (no trailing slash)
-- Vite bakes these in at build time: after changing them, redeploy.
+**Frontend**: root directory `client` (Vercel detects Vite).
+- Environment: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL` = the API URL (no trailing slash)
+
+Use each project's short domain (Project → Domains, like `lifevault-api.vercel.app`), not a long
+deployment URL. Vercel puts the long ones behind its own login, and CORS only allows `CLIENT_ORIGIN`.
 
 ## Uploading files
 

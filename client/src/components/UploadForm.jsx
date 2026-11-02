@@ -5,6 +5,21 @@ import { api } from '../lib/api.js'
 
 const EMPTY = { member_id: '', doc_type: '', doc_number: '', expiry_date: '', tags: '' }
 
+// The API on Vercel rejects requests over 4.5 MB, so the photo is shrunk to at most 2000px
+// (a few hundred KB, still sharp enough to read a document number) before Auto-fill sends it.
+async function shrinkPhoto(file) {
+  const bitmap = await createImageBitmap(file)
+  const scale = Math.min(1, 2000 / Math.max(bitmap.width, bitmap.height))
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.round(bitmap.width * scale)
+  canvas.height = Math.round(bitmap.height * scale)
+  const ctx = canvas.getContext('2d')
+  ctx.fillStyle = '#fff' // JPEG has no transparency: see-through PNG areas would turn black
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+  return canvas.toDataURL('image/jpeg', 0.85) // "data:image/jpeg;base64,..."
+}
+
 export default function UploadForm({ members, types, prefill, onSaved }) {
   const [file, setFile] = useState(null)
   const [form, setForm] = useState({ ...EMPTY, ...prefill })
@@ -22,13 +37,7 @@ export default function UploadForm({ members, types, prefill, onSaved }) {
     setFilling(true)
     setError('')
     try {
-      // shortcut: sends the full-size photo; downscale with a canvas if large phone photos hit the 10mb body limit.
-      const image = await new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => resolve(reader.result) // "data:image/jpeg;base64,..."
-        reader.onerror = reject
-        reader.readAsDataURL(file)
-      })
+      const image = await shrinkPhoto(file)
       const found = await api('/api/extract', { method: 'POST', body: { image } })
       // A date input only accepts YYYY-MM-DD; anything else would be invisible but still sent on save.
       // "No expiry" ticked by the user wins over whatever Gemini thinks it read.
