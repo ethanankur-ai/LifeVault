@@ -18,6 +18,23 @@ const MEMBER_COLORS = ['#FFD0B5', '#BCD4FF', '#C8EFC0', '#E2CCFF', '#FFE58F', '#
 function App() {
   // undefined = still checking, null = logged out, object = logged in
   const [session, setSession] = useState(undefined)
+
+  useEffect(() => {
+    // Restores a saved login on page refresh, then keeps listening for log in / log out.
+    supabase.auth.getSession().then(({ data }) => setSession(data.session))
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => setSession(session))
+    return () => data.subscription.unsubscribe()
+  }, [])
+
+  if (session === undefined) return null
+  if (!session) return <Login />
+  // Keyed by user: a different account gets a brand-new Vault, so nothing from the previous one
+  // (members, categories, open tab, or a slow API answer still on its way) can show up.
+  return <Vault key={session.user.id} user={session.user} />
+}
+
+// Everything for one logged-in user. Lives only as long as that user is logged in.
+function Vault({ user }) {
   const [tab, setTab] = useState(TABS[0])
   // Loaded once here because several tabs (upload, filters, scenarios) need the member list.
   const [members, setMembers] = useState([])
@@ -33,13 +50,6 @@ function App() {
     setPrefill(null)
   }
 
-  useEffect(() => {
-    // Restores a saved login on page refresh, then keeps listening for log in / log out.
-    supabase.auth.getSession().then(({ data }) => setSession(data.session))
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => setSession(session))
-    return () => data.subscription.unsubscribe()
-  }, [])
-
   const loadMembers = useCallback(() => {
     api('/api/members')
       .then((rows) => setMembers(rows.map((m, i) => ({ ...m, color: MEMBER_COLORS[i % MEMBER_COLORS.length] }))))
@@ -50,16 +60,11 @@ function App() {
     api('/api/doc-types').then(setTypes).catch((err) => setError(err.message))
   }, [])
 
-  // Keyed on the user id, not the session object: Supabase replaces the session on every token refresh.
-  const userId = session?.user.id
+  // Runs once per Vault, i.e. once per logged-in user (token refreshes don't remount it).
   useEffect(() => {
-    if (!userId) return
     loadMembers()
     loadTypes()
-  }, [userId, loadMembers, loadTypes])
-
-  if (session === undefined) return null
-  if (!session) return <Login />
+  }, [loadMembers, loadTypes])
 
   return (
     <div className="min-h-screen">
@@ -71,7 +76,7 @@ function App() {
             </span>
             <span className="text-lg font-bold tracking-tight">LifeVault</span>
           </div>
-          <Account user={session.user} />
+          <Account user={user} />
         </div>
       </header>
 
