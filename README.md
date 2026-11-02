@@ -13,7 +13,12 @@ lifevault/
       routes/              URL → controller mapping
       controllers/         the actual logic for each route
     test/auth.test.js      smoke test: routes reject requests without a token
-  client/            React + Vite + Tailwind (UI not built yet)
+  client/            React + Vite + Tailwind
+    src/
+      App.jsx              login gate + tabs (Documents, Add document, Checklists, Members)
+      index.css            Tailwind + the "Dossier" theme: colours, fonts, shared classes, animations
+      lib/                 supabase.js (browser client), api.js (calls our API with the token), docTypes.js, dates.js
+      components/          one file per screen/panel, plus FolderTabs (menu and member filters)
   supabase/schema.sql      tables, security rules, storage bucket
 ```
 
@@ -27,6 +32,8 @@ You need **Node 22+**, a free [Supabase](https://supabase.com) project, and, opt
 In the Supabase dashboard open **SQL Editor**, paste all of `supabase/schema.sql`, and click **Run**.
 This creates the tables, Row Level Security, a private `documents` storage bucket, and a trigger
 that gives every new sign-up their own family.
+
+Then run `supabase/002_checklists.sql` the same way. It adds the table for the family's own checklists.
 
 ### 2. Server
 
@@ -44,6 +51,7 @@ npm run dev              # http://localhost:4000, restarts on file changes (node
 ```bash
 cd client
 npm install
+cp .env.example .env     # Supabase URL + anon key, API URL
 npm run dev              # http://localhost:5173
 ```
 
@@ -79,7 +87,12 @@ Every `/api` route needs a logged-in user's token.
 | GET  | `/api/documents?q=&member=&type=` | List documents. `q` searches doc type, number and tags; `member` = member id; `type` = exact doc type |
 | GET  | `/api/documents/expiring` | Documents expiring in the next 60 days |
 | POST | `/api/documents` | Save metadata: `{ member_id, file_path, doc_type?, doc_number?, expiry_date?, tags?, extracted_json? }` |
-| POST | `/api/extract` | Auto-fill: `{ image: "data:image/jpeg;base64,..." }` → `{ doc_type, doc_number, expiry_date, name }`. Returns empty strings if Gemini fails |
+| POST | `/api/extract` | Auto-fill: `{ image: "data:image/jpeg;base64,..." }` → `{ doc_type, doc_number, expiry_date, name }`. `doc_type` may be a new category. Returns empty strings if Gemini fails |
+| GET  | `/api/doc-types` | Document categories: the built-ins plus every custom one the family uses on documents or checklists |
+| GET  | `/api/checklists` | The family's own checklists (the built-in ones live in the client) |
+| POST | `/api/checklists` | Save a checklist: `{ name, doc_types: [...] }`. New type names become custom categories |
+| POST | `/api/checklists/suggest` | AI draft: `{ situation }` → `{ name, doc_types }`. Returns an empty list if Gemini fails |
+| DELETE | `/api/checklists/:id` | Delete one of the family's checklists |
 
 ## How security works
 
@@ -89,7 +102,21 @@ Every `/api` route needs a logged-in user's token.
 - The database's Row Level Security policies (in `schema.sql`) only return rows from the user's
   own family. The API code never filters by family; the database does it, so a forgotten filter can't leak data.
 
-## Uploading files (for when you build the UI)
+## Deploy
+
+Push the repo to GitHub first; both hosts deploy from it.
+
+**API on Render**: New → Web Service → pick the repo.
+- Root directory `server`, build command `npm install`, start command `npm start`
+- Environment: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `GEMINI_API_KEY` (optional), `CLIENT_ORIGIN` = your Vercel URL (no trailing slash; set it after the Vercel deploy)
+- Render sets `PORT` itself. The free tier sleeps when idle; the first request can take ~50 s.
+
+**Frontend on Vercel**: Add New → Project → pick the repo.
+- Root directory `client` (Vercel detects Vite)
+- Environment: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL` = your Render URL (no trailing slash)
+- Vite bakes these in at build time: after changing them, redeploy.
+
+## Uploading files
 
 The browser uploads directly to Supabase Storage. Use the bucket `documents` and the path
 `<family_id>/<file name>`; the storage policy rejects any other folder. Then call `POST /api/documents`

@@ -3,10 +3,13 @@
   "main": "src/index.js",
   "scripts": {
     "test": "node --test",
-    "dev": "nodemon --env-file=.env src/index.js",
-    "start": "node --env-file=.env src/index.js"
+    "dev": "nodemon --env-file-if-exists=.env src/index.js",
+    "start": "node --env-file-if-exists=.env src/index.js"
   },
   "type": "module",
+  "engines": {
+    "node": ">=22.9"
+  },
   "dependencies": {
     "@google/genai": "^2.31.0",
     "@supabase/supabase-js": "^2.118.0",

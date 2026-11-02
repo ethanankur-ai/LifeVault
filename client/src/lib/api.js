@@ -9,7 +9,7 @@ export async function api(path, { method = 'GET', body } = {}) {
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${data.session?.access_token}` },
     body: body && JSON.stringify(body),
   })
-  const json = await res.json()
+  const json = res.status === 204 ? null : await res.json() // 204 = success with no body (DELETE)
   // The server sends { error: "..." } on failure; surface it to the screen.
   if (!res.ok) throw new Error(json.error || res.statusText)
   return json

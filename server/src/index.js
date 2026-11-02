@@ -5,11 +5,13 @@ import { requireAuth } from './middleware/auth.js';
 import membersRoutes from './routes/members.js';
 import documentsRoutes from './routes/documents.js';
 import extractRoutes from './routes/extract.js';
+import checklistsRoutes from './routes/checklists.js';
+import docTypesRoutes from './routes/docTypes.js';
 
 const app = express();
 
-// The Vite dev server runs on a different port (= different origin), so the browser needs CORS permission.
-app.use(cors({ origin: 'http://localhost:5173' }));
+// The frontend runs on a different origin (Vite dev server, or Vercel in production), so the browser needs CORS permission.
+app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }));
 // Parses JSON request bodies into req.body. 10mb because /api/extract receives base64 images.
 app.use(express.json({ limit: '10mb' }));
 
@@ -18,6 +20,8 @@ app.use('/api', requireAuth);
 app.use('/api/members', membersRoutes);
 app.use('/api/documents', documentsRoutes);
 app.use('/api/extract', extractRoutes);
+app.use('/api/checklists', checklistsRoutes);
+app.use('/api/doc-types', docTypesRoutes);
 
 // Central error handler. Express 5 forwards errors thrown in async handlers here automatically,
 // so controllers can just `throw` instead of wrapping everything in try/catch.

@@ -7,6 +7,7 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [familyName, setFamilyName] = useState('')
+  const [fullName, setFullName] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -18,57 +19,73 @@ export default function Login() {
       mode === 'login'
         ? await supabase.auth.signInWithPassword({ email, password })
         : // family_name is read by the sign-up trigger in schema.sql to name the new family.
-          await supabase.auth.signUp({ email, password, options: { data: { family_name: familyName || 'My Family' } } })
+          await supabase.auth.signUp({ email, password, options: { data: { family_name: familyName || 'My Family', full_name: fullName.trim() } } })
     if (error) setError(error.message)
     setBusy(false)
   }
 
-  const input = 'w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500'
-
   return (
-    <main className="min-h-screen grid place-items-center bg-slate-50 px-4">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 rounded-2xl bg-white p-6 shadow">
-        <h1 className="text-2xl font-bold text-slate-800">LifeVault</h1>
-        <p className="text-sm text-slate-500">
-          {mode === 'login' ? 'Log in to your family vault.' : 'Create your family vault.'}
-        </p>
+    <main className="grid min-h-screen place-items-center px-4 py-10">
+      <div className="rise w-full max-w-sm">
+        <div className="mb-6 flex items-center gap-3">
+          <span className="grid size-12 place-items-center rounded-xl bg-ink">
+            <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
+          </span>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">LifeVault</h1>
+            <p className="label">Every family document, one file</p>
+          </div>
+        </div>
 
-        {mode === 'signup' && (
-          <label className="block space-y-1">
-            <span className="text-sm text-slate-700">Family name</span>
-            <input className={input} value={familyName} onChange={(e) => setFamilyName(e.target.value)} placeholder="The Sharmas" />
+        {/* Folder tab on top of the form card, like the document cards inside the app. */}
+        <div className="inline-flex h-7 items-center rounded-t-[10px] bg-[#BCD4FF] px-3.5 font-mono text-xs font-semibold tracking-wider uppercase">
+          {mode === 'login' ? 'Log in' : 'New family'}
+        </div>
+        <form onSubmit={handleSubmit} className="card space-y-4 rounded-tl-none p-5">
+          {mode === 'signup' && (
+            <label className="block space-y-1.5">
+              <span className="label">Your name</span>
+              <input className="field" required autoComplete="name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Rohan Sharma" />
+            </label>
+          )}
+          {mode === 'signup' && (
+            <label className="block space-y-1.5">
+              <span className="label">Family name</span>
+              <input className="field" value={familyName} onChange={(e) => setFamilyName(e.target.value)} placeholder="The Sharmas" />
+            </label>
+          )}
+          <label className="block space-y-1.5">
+            <span className="label">Email</span>
+            <input className="field" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           </label>
-        )}
-        <label className="block space-y-1">
-          <span className="text-sm text-slate-700">Email</span>
-          <input className={input} type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        </label>
-        <label className="block space-y-1">
-          <span className="text-sm text-slate-700">Password</span>
-          <input
-            className={input}
-            type="password"
-            required
-            minLength={6}
-            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </label>
+          <label className="block space-y-1.5">
+            <span className="label">Password</span>
+            <input
+              className="field"
+              type="password"
+              required
+              minLength={6}
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </label>
 
-        {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+          {error && <p role="alert" className="text-sm text-danger">{error}</p>}
 
-        <button disabled={busy} className="w-full rounded-lg bg-indigo-600 py-2 font-medium text-white hover:bg-indigo-700 disabled:opacity-50">
-          {busy ? 'Please wait…' : mode === 'login' ? 'Log in' : 'Sign up'}
-        </button>
-        <button
-          type="button"
-          onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError('') }}
-          className="w-full text-sm text-indigo-600 hover:underline"
-        >
-          {mode === 'login' ? 'New here? Create an account' : 'Already have an account? Log in'}
-        </button>
-      </form>
+          <button disabled={busy} className="btn w-full">
+            {busy ? 'Please wait…' : mode === 'login' ? 'Log in' : 'Create family vault'}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError('') }}
+            className="min-h-11 w-full text-sm font-semibold text-accent hover:underline"
+          >
+            {mode === 'login' ? 'New here? Create an account' : 'Already have an account? Log in'}
+          </button>
+        </form>
+        <p className="mt-5 text-center text-sm text-muted">Only your family can see your documents.</p>
+      </div>
     </main>
   )
 }
