@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { api } from '../lib/api.js'
-import { DOC_TYPES } from '../lib/docTypes.js'
 import { daysLeft } from '../lib/dates.js'
 import FolderTabs from './FolderTabs.jsx'
 
@@ -16,7 +15,7 @@ function stampFor(date) {
   return [`Valid to ${date.slice(0, 4)}`, 'border-muted text-muted']
 }
 
-export default function DocumentList({ members }) {
+export default function DocumentList({ members, types }) {
   const [q, setQ] = useState('')
   const [member, setMember] = useState('')
   const [type, setType] = useState('')
@@ -60,7 +59,7 @@ export default function DocumentList({ members }) {
         <label htmlFor="type-filter" className="label">Type</label>
         <select id="type-filter" className="field" value={type} onChange={(e) => setType(e.target.value)}>
           <option value="">All types</option>
-          {DOC_TYPES.map((t) => <option key={t}>{t}</option>)}
+          {types.map((t) => <option key={t}>{t}</option>)}
         </select>
       </div>
 

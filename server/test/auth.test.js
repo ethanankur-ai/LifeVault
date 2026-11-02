@@ -21,6 +21,11 @@ for (const [method, path] of [
   ['GET', '/api/documents/expiring'],
   ['POST', '/api/documents'],
   ['POST', '/api/extract'],
+  ['GET', '/api/doc-types'],
+  ['GET', '/api/checklists'],
+  ['POST', '/api/checklists'],
+  ['POST', '/api/checklists/suggest'],
+  ['DELETE', '/api/checklists/123'],
 ]) {
   test(`${method} ${path} without a token → 401`, async () => {
     const res = await fetch(base + path, { method });

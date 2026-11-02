@@ -33,6 +33,8 @@ In the Supabase dashboard open **SQL Editor**, paste all of `supabase/schema.sql
 This creates the tables, Row Level Security, a private `documents` storage bucket, and a trigger
 that gives every new sign-up their own family.
 
+Then run `supabase/002_checklists.sql` the same way. It adds the table for the family's own checklists.
+
 ### 2. Server
 
 ```bash
@@ -85,7 +87,12 @@ Every `/api` route needs a logged-in user's token.
 | GET  | `/api/documents?q=&member=&type=` | List documents. `q` searches doc type, number and tags; `member` = member id; `type` = exact doc type |
 | GET  | `/api/documents/expiring` | Documents expiring in the next 60 days |
 | POST | `/api/documents` | Save metadata: `{ member_id, file_path, doc_type?, doc_number?, expiry_date?, tags?, extracted_json? }` |
-| POST | `/api/extract` | Auto-fill: `{ image: "data:image/jpeg;base64,..." }` → `{ doc_type, doc_number, expiry_date, name }`. Returns empty strings if Gemini fails |
+| POST | `/api/extract` | Auto-fill: `{ image: "data:image/jpeg;base64,..." }` → `{ doc_type, doc_number, expiry_date, name }`. `doc_type` may be a new category. Returns empty strings if Gemini fails |
+| GET  | `/api/doc-types` | Document categories: the built-ins plus every custom one the family uses on documents or checklists |
+| GET  | `/api/checklists` | The family's own checklists (the built-in ones live in the client) |
+| POST | `/api/checklists` | Save a checklist: `{ name, doc_types: [...] }`. New type names become custom categories |
+| POST | `/api/checklists/suggest` | AI draft: `{ situation }` → `{ name, doc_types }`. Returns an empty list if Gemini fails |
+| DELETE | `/api/checklists/:id` | Delete one of the family's checklists |
 
 ## How security works
 

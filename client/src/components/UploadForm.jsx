@@ -2,11 +2,10 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { api } from '../lib/api.js'
-import { DOC_TYPES } from '../lib/docTypes.js'
 
 const EMPTY = { member_id: '', doc_type: '', doc_number: '', expiry_date: '', tags: '' }
 
-export default function UploadForm({ members, prefill, onSaved }) {
+export default function UploadForm({ members, types, prefill, onSaved }) {
   const [file, setFile] = useState(null)
   const [form, setForm] = useState({ ...EMPTY, ...prefill })
   const [error, setError] = useState('')
@@ -65,6 +64,8 @@ export default function UploadForm({ members, prefill, onSaved }) {
           method: 'POST',
           body: {
             ...form,
+            // Reuse the existing spelling ("passport" → "Passport"); anything else becomes a new category.
+            doc_type: types.find((t) => t.toLowerCase() === form.doc_type.trim().toLowerCase()) ?? form.doc_type.trim(),
             file_path: path,
             tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
           },
@@ -116,10 +117,11 @@ export default function UploadForm({ members, prefill, onSaved }) {
       </label>
       <label className="space-y-1.5">
         <span className="label">Document type</span>
-        <select className="field" required value={form.doc_type} onChange={set('doc_type')}>
-          <option value="">Choose…</option>
-          {DOC_TYPES.map((t) => <option key={t}>{t}</option>)}
-        </select>
+        {/* A text box with suggestions: pick a category or type a new one. */}
+        <input className="field" required list="doc-type-options" placeholder="Pick or type a new category" value={form.doc_type} onChange={set('doc_type')} />
+        <datalist id="doc-type-options">
+          {types.map((t) => <option key={t} value={t} />)}
+        </datalist>
       </label>
       <label className="space-y-1.5">
         <span className="label">Document number</span>

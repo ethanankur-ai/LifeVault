@@ -21,6 +21,8 @@ function App() {
   const [tab, setTab] = useState(TABS[0])
   // Loaded once here because several tabs (upload, filters, scenarios) need the member list.
   const [members, setMembers] = useState([])
+  // Built-in document types plus the family's custom categories (GET /api/doc-types).
+  const [types, setTypes] = useState([])
   const [error, setError] = useState('')
   // { member_id, doc_type } when a checklist's "Add" button opened the upload form.
   const [prefill, setPrefill] = useState(null)
@@ -44,11 +46,17 @@ function App() {
       .catch((err) => setError(err.message))
   }, [])
 
+  const loadTypes = useCallback(() => {
+    api('/api/doc-types').then(setTypes).catch((err) => setError(err.message))
+  }, [])
+
   // Keyed on the user id, not the session object: Supabase replaces the session on every token refresh.
   const userId = session?.user.id
   useEffect(() => {
-    if (userId) loadMembers()
-  }, [userId, loadMembers])
+    if (!userId) return
+    loadMembers()
+    loadTypes()
+  }, [userId, loadMembers, loadTypes])
 
   if (session === undefined) return null
   if (!session) return <Login />
@@ -77,11 +85,19 @@ function App() {
         {tab === 'Documents' && (
           <>
             <ExpiringPanel members={members} />
-            <DocumentList members={members} />
+            <DocumentList members={members} types={types} />
           </>
         )}
-        {tab === 'Add document' && <UploadForm members={members} prefill={prefill} onSaved={() => openTab('Documents')} />}
-        {tab === 'Checklists' && <Scenarios members={members} onAdd={(p) => { setPrefill(p); setTab('Add document') }} />}
+        {tab === 'Add document' && <UploadForm
+            members={members}
+            types={types}
+            prefill={prefill}
+            onSaved={() => {
+              loadTypes() // the document may have used a new category
+              openTab('Documents')
+            }}
+          />}
+        {tab === 'Checklists' && <Scenarios members={members} types={types} onTypesChange={loadTypes} onAdd={(p) => { setPrefill(p); setTab('Add document') }} />}
         {tab === 'Members' && <Members members={members} onChange={loadMembers} />}
       </main>
     </div>

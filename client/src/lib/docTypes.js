@@ -1,20 +1,6 @@
-// One fixed list of document types. The upload form, the type filter and the scenario
-// checklists all use it, so "Passport" is always spelled the same way and can be matched.
-export const DOC_TYPES = [
-  'Aadhaar',
-  'PAN card',
-  'Passport',
-  'Birth certificate',
-  'Driving licence',
-  'Voter ID',
-  'Insurance policy',
-  'Medical report',
-  'School record',
-  'Photo',
-  'Other',
-]
-
-// Scenario checklists: which document types each situation usually needs.
+// Built-in scenario checklists: which document types each situation usually needs.
+// The type list itself comes from the server (GET /api/doc-types; built-ins in server/src/docTypes.js),
+// so names here must match it. Families add their own checklists from the Checklists tab.
 export const SCENARIOS = {
   'School admission': ['Birth certificate', 'Aadhaar', 'Photo', 'School record'],
   'Hospital visit': ['Aadhaar', 'Insurance policy', 'Medical report'],
