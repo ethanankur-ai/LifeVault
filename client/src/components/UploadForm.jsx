@@ -6,9 +6,9 @@ import { DOC_TYPES } from '../lib/docTypes.js'
 
 const EMPTY = { member_id: '', doc_type: '', doc_number: '', expiry_date: '', tags: '' }
 
-export default function UploadForm({ members, onSaved }) {
+export default function UploadForm({ members, prefill, onSaved }) {
   const [file, setFile] = useState(null)
-  const [form, setForm] = useState(EMPTY)
+  const [form, setForm] = useState({ ...EMPTY, ...prefill })
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 

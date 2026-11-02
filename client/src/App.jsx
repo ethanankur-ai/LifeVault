@@ -22,6 +22,14 @@ function App() {
   // Loaded once here because several tabs (upload, filters, scenarios) need the member list.
   const [members, setMembers] = useState([])
   const [error, setError] = useState('')
+  // { member_id, doc_type } when a checklist's "Add" button opened the upload form.
+  const [prefill, setPrefill] = useState(null)
+
+  // Menu clicks start from a clean form; only the checklist's "Add" pre-fills it.
+  const openTab = (t) => {
+    setTab(t)
+    setPrefill(null)
+  }
 
   useEffect(() => {
     // Restores a saved login on page refresh, then keeps listening for log in / log out.
@@ -60,7 +68,7 @@ function App() {
       </header>
 
       <main className="mx-auto max-w-4xl space-y-5 px-4 py-5">
-        <FolderTabs label="Sections" tabs={TABS.map((t) => ({ value: t, label: t }))} value={tab} onChange={setTab} />
+        <FolderTabs label="Sections" tabs={TABS.map((t) => ({ value: t, label: t }))} value={tab} onChange={openTab} />
         <div>
           <p className="label">Family file</p>
           <h1 className="text-3xl font-bold tracking-tight">{tab}</h1>
@@ -72,8 +80,8 @@ function App() {
             <DocumentList members={members} />
           </>
         )}
-        {tab === 'Add document' && <UploadForm members={members} onSaved={() => setTab('Documents')} />}
-        {tab === 'Checklists' && <Scenarios members={members} />}
+        {tab === 'Add document' && <UploadForm members={members} prefill={prefill} onSaved={() => openTab('Documents')} />}
+        {tab === 'Checklists' && <Scenarios members={members} onAdd={(p) => { setPrefill(p); setTab('Add document') }} />}
         {tab === 'Members' && <Members members={members} onChange={loadMembers} />}
       </main>
     </div>

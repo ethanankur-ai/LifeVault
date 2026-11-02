@@ -13,7 +13,7 @@ const STAMP = {
   missing: ['Missing', 'border-danger text-danger'],
 }
 
-export default function Scenarios({ members }) {
+export default function Scenarios({ members, onAdd }) {
   const [picked, setPicked] = useState('')
   const [scenario, setScenario] = useState(Object.keys(SCENARIOS)[0])
   const [loaded, setLoaded] = useState({ memberId: null, docs: [] })
@@ -43,6 +43,7 @@ export default function Scenarios({ members }) {
   }
   const items = docs && SCENARIOS[scenario].map((type) => ({ type, status: status(type) }))
   const ready = items?.filter((i) => i.status === 'ready').length
+  const memberName = members.find((m) => m.id === memberId)?.name
 
   return (
     <div className="space-y-4">
@@ -80,7 +81,19 @@ export default function Scenarios({ members }) {
               return (
                 <li key={type} className="rise card flex items-center justify-between gap-3 px-4 py-3.5" style={{ animationDelay: `${i * 60}ms` }}>
                   <span className="font-semibold">{type}</span>
-                  <span className={`stamp ${color}`} style={{ animationDelay: `${i * 60 + 250}ms` }}>{text}</span>
+                  <div className="flex items-center gap-3">
+                    <span className={`stamp ${color}`} style={{ animationDelay: `${i * 60 + 250}ms` }}>{text}</span>
+                    {status !== 'ready' && (
+                      <button
+                        type="button"
+                        onClick={() => onAdd({ member_id: memberId, doc_type: type })}
+                        aria-label={`Add ${type} for ${memberName}`}
+                        className="btn-ghost h-10 px-3 text-sm"
+                      >
+                        Add
+                      </button>
+                    )}
+                  </div>
                 </li>
               )
             })}
