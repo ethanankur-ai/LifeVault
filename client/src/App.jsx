@@ -9,6 +9,7 @@ import DocumentList from './components/DocumentList.jsx'
 import ExpiringPanel from './components/ExpiringPanel.jsx'
 import Scenarios from './components/Scenarios.jsx'
 import FolderTabs from './components/FolderTabs.jsx'
+import Account from './components/Account.jsx'
 
 const TABS = ['Documents', 'Add document', 'Checklists', 'Members']
 // Folder-tab colour per member, in list order, so each person is recognisable everywhere.
@@ -54,10 +55,7 @@ function App() {
             </span>
             <span className="text-lg font-bold tracking-tight">LifeVault</span>
           </div>
-          <div className="flex items-center gap-3 text-sm">
-            <span className="hidden text-muted sm:inline">{session.user.email}</span>
-            <button onClick={() => supabase.auth.signOut()} className="btn-ghost h-10 text-sm">Log out</button>
-          </div>
+          <Account user={session.user} />
         </div>
       </header>
 

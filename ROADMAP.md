@@ -15,6 +15,7 @@ Status: ✅ built · 🚧 in progress · ⬜ not started
 | 6 | Expiry alerts | "Expiring soon" panel for documents expiring within 60 days | ✅ |
 | 7 | Scenario checklists | "School admission", "Hospital visit", "Passport renewal": what's ready, what's missing | ✅ |
 | 8 | Go live | Frontend on Vercel, API on Render | 🚧 code ready, you deploy |
+| 9 | Your account | Your name at sign-up; avatar + name in the header opens a popup to edit it or log out | ✅ |
 
 If time runs short, cut in this order: 7 → 8 (demo locally) → 5 → 6. Features 1–4 are the core loop.
 

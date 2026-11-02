@@ -7,6 +7,7 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [familyName, setFamilyName] = useState('')
+  const [fullName, setFullName] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -18,7 +19,7 @@ export default function Login() {
       mode === 'login'
         ? await supabase.auth.signInWithPassword({ email, password })
         : // family_name is read by the sign-up trigger in schema.sql to name the new family.
-          await supabase.auth.signUp({ email, password, options: { data: { family_name: familyName || 'My Family' } } })
+          await supabase.auth.signUp({ email, password, options: { data: { family_name: familyName || 'My Family', full_name: fullName.trim() } } })
     if (error) setError(error.message)
     setBusy(false)
   }
@@ -41,6 +42,12 @@ export default function Login() {
           {mode === 'login' ? 'Log in' : 'New family'}
         </div>
         <form onSubmit={handleSubmit} className="card space-y-4 rounded-tl-none p-5">
+          {mode === 'signup' && (
+            <label className="block space-y-1.5">
+              <span className="label">Your name</span>
+              <input className="field" required autoComplete="name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Rohan Sharma" />
+            </label>
+          )}
           {mode === 'signup' && (
             <label className="block space-y-1.5">
               <span className="label">Family name</span>
