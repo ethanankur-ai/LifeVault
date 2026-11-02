@@ -14,7 +14,7 @@ Status: ✅ built · 🚧 in progress · ⬜ not started
 | 5 | AI auto-fill | One click reads a document photo and fills in the form | ✅ |
 | 6 | Expiry alerts | "Expiring soon" panel for documents expiring within 60 days | ✅ |
 | 7 | Scenario checklists | "School admission", "Hospital visit", "Passport renewal": what's ready, what's missing | ✅ |
-| 8 | Go live | Frontend on Vercel, API on Render | 🚧 code ready, you deploy |
+| 8 | Go live | Frontend and API on Vercel (two projects) | 🚧 code ready, you deploy |
 | 9 | Your account | Your name at sign-up; avatar + name in the header opens a popup to edit it or log out | ✅ |
 | 10 | AI checklists & custom categories | Describe a situation and AI drafts a checklist; type new document categories, or let auto-fill invent one | ✅ run `supabase/002_checklists.sql` |
 
@@ -34,9 +34,9 @@ If time runs short, cut in this order: 7 → 8 (demo locally) → 5 → 6. Featu
 ## Go live checklist (Feature 8, steps in README → Deploy)
 
 - [ ] `git init`, commit, push to a new GitHub repo (`.env` files are already git-ignored)
-- [ ] Render: create the API web service and set its env vars
-- [ ] Vercel: create the frontend project and set its env vars (`VITE_API_URL` = Render URL)
-- [ ] Render: set `CLIENT_ORIGIN` = Vercel URL, then redeploy
+- [ ] Vercel: create the API project (root `server`) and set its env vars
+- [ ] Vercel: create the frontend project (root `client`) and set its env vars (`VITE_API_URL` = API URL)
+- [ ] API project: set `CLIENT_ORIGIN` = frontend URL, then redeploy
 - [ ] Supabase → Authentication → URL Configuration: set Site URL to the Vercel URL
 - [ ] Smoke test on a phone: sign up → add member → upload → search → open
 
