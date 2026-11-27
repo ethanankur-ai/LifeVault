@@ -5,6 +5,12 @@ import { api } from '../lib/api.js'
 
 const EMPTY = { member_id: '', doc_type: '', doc_number: '', expiry_date: '', tags: '' }
 
+// What the vault accepts. `accept` on the file input is only a hint (the picker can be switched to "All files",
+// and drag-and-drop skips it), so the type and size are checked again here. The storage bucket enforces the
+// same list on the server side (supabase/003_hardening.sql).
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif', 'application/pdf']
+const MAX_BYTES = 10 * 1024 * 1024
+
 // The API on Vercel rejects requests over 4.5 MB, so the photo is shrunk to at most 2000px
 // (a few hundred KB, still sharp enough to read a document number) before Auto-fill sends it.
 async function shrinkPhoto(file) {
@@ -31,6 +37,14 @@ export default function UploadForm({ members, types, prefill, onSaved }) {
 
   const set = (field) => (e) => setForm({ ...form, [field]: e.target.value })
 
+  function handleFile(e) {
+    const f = e.target.files[0] ?? null
+    const problem = f && (!ALLOWED_TYPES.includes(f.type) ? 'Only photos (JPEG, PNG, WebP, GIF, HEIC) and PDF files can be stored.' : f.size > MAX_BYTES ? 'That file is over 10 MB. Please use a smaller one.' : '')
+    if (problem) e.target.value = '' // clears the picker so the bad file can't be submitted
+    setError(problem || '')
+    setFile(problem ? null : f)
+  }
+
   // Sends the photo to POST /api/extract (Gemini). The server returns "" for anything it couldn't
   // read, so we only overwrite fields that came back filled in.
   async function handleAutoFill() {
@@ -55,6 +69,8 @@ export default function UploadForm({ members, types, prefill, onSaved }) {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    const docType = form.doc_type.trim() // "required" alone accepts a type of only spaces
+    if (!docType) return setError('Choose or type a document type.')
     setBusy(true)
     setError('')
     try {
@@ -62,7 +78,7 @@ export default function UploadForm({ members, types, prefill, onSaved }) {
       const { data: family, error: famErr } = await supabase.from('families').select('id').single()
       if (famErr) throw famErr
       // Random name: avoids clashes and characters Storage rejects in real file names.
-      const ext = file.name.includes('.') ? file.name.split('.').pop() : 'bin'
+      const ext = (file.name.includes('.') ? file.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 8) : '') || 'bin'
       const path = `${family.id}/${crypto.randomUUID()}.${ext}`
 
       const { error: upErr } = await supabase.storage.from('documents').upload(path, file)
@@ -74,7 +90,7 @@ export default function UploadForm({ members, types, prefill, onSaved }) {
           body: {
             ...form,
             // Reuse the existing spelling ("passport" → "Passport"); anything else becomes a new category.
-            doc_type: types.find((t) => t.toLowerCase() === form.doc_type.trim().toLowerCase()) ?? form.doc_type.trim(),
+            doc_type: types.find((t) => t.toLowerCase() === docType.toLowerCase()) ?? docType,
             file_path: path,
             tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
           },
@@ -106,8 +122,8 @@ export default function UploadForm({ members, types, prefill, onSaved }) {
           className="field h-auto py-2.5 file:mr-3 file:rounded-md file:border-0 file:bg-paper file:px-3 file:py-1.5 file:font-mono file:text-xs file:font-semibold file:uppercase"
           type="file"
           required
-          accept="image/*,application/pdf"
-          onChange={(e) => setFile(e.target.files[0] ?? null)}
+          accept={ALLOWED_TYPES.join(',')}
+          onChange={handleFile}
         />
       </label>
       {/* Gemini reads images only, so PDFs are filled in by hand. */}
@@ -127,14 +143,14 @@ export default function UploadForm({ members, types, prefill, onSaved }) {
       <label className="space-y-1.5">
         <span className="label">Document type</span>
         {/* A text box with suggestions: pick a category or type a new one. */}
-        <input className="field" required list="doc-type-options" placeholder="Pick or type a new category" value={form.doc_type} onChange={set('doc_type')} />
+        <input className="field" required maxLength={60} list="doc-type-options" placeholder="Pick or type a new category" value={form.doc_type} onChange={set('doc_type')} />
         <datalist id="doc-type-options">
           {types.map((t) => <option key={t} value={t} />)}
         </datalist>
       </label>
       <label className="space-y-1.5">
         <span className="label">Document number</span>
-        <input className="field font-mono" value={form.doc_number} onChange={set('doc_number')} />
+        <input className="field font-mono" maxLength={60} value={form.doc_number} onChange={set('doc_number')} />
       </label>
       <div className="space-y-1.5">
         <label htmlFor="expiry_date" className="label">Expiry date</label>

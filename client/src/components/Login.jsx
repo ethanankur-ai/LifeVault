@@ -9,18 +9,22 @@ export default function Login() {
   const [familyName, setFamilyName] = useState('')
   const [fullName, setFullName] = useState('')
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
     setBusy(true)
     setError('')
-    const { error } =
+    setNotice('')
+    const { data, error } =
       mode === 'login'
         ? await supabase.auth.signInWithPassword({ email, password })
         : // family_name is read by the sign-up trigger in schema.sql to name the new family.
-          await supabase.auth.signUp({ email, password, options: { data: { family_name: familyName || 'My Family', full_name: fullName.trim() } } })
+          await supabase.auth.signUp({ email, password, options: { data: { family_name: familyName.trim() || 'My Family', full_name: fullName.trim() } } })
     if (error) setError(error.message)
+    // With "Confirm email" on, sign-up succeeds but gives no session until the link is clicked.
+    else if (mode === 'signup' && !data.session) setNotice('Account created. Check your email and click the confirmation link, then log in.')
     setBusy(false)
   }
 
@@ -51,7 +55,7 @@ export default function Login() {
           {mode === 'signup' && (
             <label className="block space-y-1.5">
               <span className="label">Family name</span>
-              <input className="field" value={familyName} onChange={(e) => setFamilyName(e.target.value)} placeholder="The Sharmas" />
+              <input className="field" maxLength={60} value={familyName} onChange={(e) => setFamilyName(e.target.value)} placeholder="The Sharmas" />
             </label>
           )}
           <label className="block space-y-1.5">
@@ -72,13 +76,14 @@ export default function Login() {
           </label>
 
           {error && <p role="alert" className="text-sm text-danger">{error}</p>}
+          {notice && <p role="status" className="text-sm text-ok">{notice}</p>}
 
           <button disabled={busy} className="btn w-full">
             {busy ? 'Please wait…' : mode === 'login' ? 'Log in' : 'Create family vault'}
           </button>
           <button
             type="button"
-            onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError('') }}
+            onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); setNotice('') }}
             className="min-h-11 w-full text-sm font-semibold text-accent hover:underline"
           >
             {mode === 'login' ? 'New here? Create an account' : 'Already have an account? Log in'}

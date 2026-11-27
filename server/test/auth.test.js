@@ -32,3 +32,24 @@ for (const [method, path] of [
     assert.equal(res.status, 401);
   });
 }
+
+// Header parsing and error shapes (checked before any Supabase call, so no network is needed).
+test('a bare token without the "Bearer" scheme → 401', async () => {
+  const res = await fetch(base + '/api/members', { headers: { Authorization: 'just-a-token' } });
+  assert.equal(res.status, 401);
+});
+
+test('"bearer" in lower case is accepted as the scheme (then Supabase, unreachable here, answers → 503, not 401)', async () => {
+  const res = await fetch(base + '/api/members', { headers: { Authorization: 'bearer abc' } });
+  assert.equal(res.status, 503);
+});
+
+test('an unauthenticated request is rejected before its body is parsed', async () => {
+  const res = await fetch(base + '/api/members', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{bad' });
+  assert.equal(res.status, 401);
+});
+
+test('the server does not advertise Express', async () => {
+  const res = await fetch(base + '/api/members');
+  assert.equal(res.headers.get('x-powered-by'), null);
+});

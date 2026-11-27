@@ -35,6 +35,8 @@ that gives every new sign-up their own family.
 
 Then run `supabase/002_checklists.sql` the same way. It adds the table for the family's own checklists.
 
+Then run `supabase/003_hardening.sql`. It adds input rules the database enforces itself (non-blank names, length limits, files only inside the family's folder), two indexes, and limits the `documents` bucket to photos and PDFs of at most 10 MB. It is safe on a database that already has data.
+
 ### 2. Server
 
 ```bash
@@ -44,7 +46,8 @@ npm install
 npm run dev              # http://localhost:4000, restarts on file changes (nodemon)
 ```
 
-`npm test` runs the smoke test (no Supabase needed).
+`npm test` runs the server tests: auth, validation, rate limit and document types (no Supabase needed).
+In `.env`, also set `SUPABASE_ANON_KEY` (Project Settings → API, the anon / publishable key). Requests made for a signed-in user use it, so they can never run with admin rights.
 
 ### 3. Client
 
@@ -53,6 +56,7 @@ cd client
 npm install
 cp .env.example .env     # Supabase URL + anon key, API URL
 npm run dev              # http://localhost:5173
+npm test                 # date helper tests
 ```
 
 ## Trying the API without a frontend
@@ -85,9 +89,9 @@ Every `/api` route needs a logged-in user's token.
 | GET  | `/api/members` | List the family's members |
 | POST | `/api/members` | Add a member: `{ name, relation?, dob? }` |
 | GET  | `/api/documents?q=&member=&type=` | List documents. `q` searches doc type, number and tags; `member` = member id; `type` = exact doc type |
-| GET  | `/api/documents/expiring` | Documents expiring in the next 60 days |
-| POST | `/api/documents` | Save metadata: `{ member_id, file_path, doc_type?, doc_number?, expiry_date?, tags?, extracted_json? }` |
-| POST | `/api/extract` | Auto-fill: `{ image: "data:image/jpeg;base64,..." }` → `{ doc_type, doc_number, expiry_date, name }`. `doc_type` may be a new category. Returns empty strings if Gemini fails |
+| GET  | `/api/documents/expiring?today=` | Documents expiring in the next 60 days. `today` (`YYYY-MM-DD`) is the caller's own calendar day; the app sends it so the window matches the user's timezone. Defaults to the server's UTC day |
+| POST | `/api/documents` | Save metadata: `{ member_id, file_path, doc_type?, doc_number?, expiry_date?, tags?, extracted_json? }`. `file_path` must start with `<family_id>/`. Limits: type and number 60 characters, 20 tags of 40 characters |
+| POST | `/api/extract` | Auto-fill (AI routes allow 20 calls per user per minute, then answer 429): `{ image: "data:image/jpeg;base64,..." }` → `{ doc_type, doc_number, expiry_date, name }`. `doc_type` may be a new category. Returns empty strings if Gemini fails |
 | GET  | `/api/doc-types` | Document categories: the built-ins plus every custom one the family uses on documents or checklists |
 | GET  | `/api/checklists` | The family's own checklists (the built-in ones live in the client) |
 | POST | `/api/checklists` | Save a checklist: `{ name, doc_types: [...] }`. New type names become custom categories |
@@ -109,7 +113,7 @@ repo (Add New → Project, import the repo twice). Vercel only uses environment 
 so redeploy after changing one.
 
 **API**: root directory `server`. Vercel detects Express from `src/index.js`; leave the build settings.
-- Environment: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `GEMINI_API_KEY` (optional), `CLIENT_ORIGIN` = the frontend URL (no trailing slash; set it after the frontend deploy)
+- Environment: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `SUPABASE_ANON_KEY`, `GEMINI_API_KEY` (optional), `CLIENT_ORIGIN` = the frontend URL (no trailing slash; set it after the frontend deploy)
 - The API runs as one Vercel Function, which accepts requests up to 4.5 MB. That's why Auto-fill shrinks photos before sending them.
 
 **Frontend**: root directory `client` (Vercel detects Vite).
@@ -120,7 +124,7 @@ deployment URL. Vercel puts the long ones behind its own login, and CORS only al
 
 ## Uploading files
 
-The browser uploads directly to Supabase Storage. Use the bucket `documents` and the path
+The browser uploads directly to Supabase Storage. Only JPEG, PNG, WebP, GIF, HEIC and PDF files up to 10 MB are accepted (the app and the bucket both enforce this). Use the bucket `documents` and the path
 `<family_id>/<file name>`; the storage policy rejects any other folder. Then call `POST /api/documents`
 with that path as `file_path`. The client can read its family id with
 `supabase.from('families').select('id').single()`.

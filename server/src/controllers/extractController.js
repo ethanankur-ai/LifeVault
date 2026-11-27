@@ -3,6 +3,7 @@
 // empty fields, and the user just types them in.
 import { askGemini } from '../gemini.js';
 import { DOC_TYPES, familyDocTypes } from '../docTypes.js';
+import { isDate } from '../validate.js';
 
 const EMPTY = { doc_type: '', doc_number: '', expiry_date: '', name: '' };
 
@@ -31,5 +32,13 @@ export async function extract(req, res) {
 
   const types = await familyDocTypes(req.db).catch(() => DOC_TYPES);
   const answer = await askGemini([{ inlineData: { mimeType, data } }, { text: prompt(types) }], SCHEMA);
-  res.json({ ...EMPTY, ...answer });
+  // The AI's answer is untrusted: keep only short strings, and only a real YYYY-MM-DD date.
+  const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+  const expiry = str(answer?.expiry_date, 10);
+  res.json({
+    doc_type: str(answer?.doc_type, 60),
+    doc_number: str(answer?.doc_number, 60),
+    expiry_date: isDate(expiry) ? expiry : '',
+    name: str(answer?.name, 100),
+  });
 }

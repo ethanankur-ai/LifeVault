@@ -53,7 +53,7 @@ export default function Scenarios({ members, types, onAdd, onTypesChange }) {
   const status = (type) => {
     const ofType = docs.filter((d) => d.doc_type?.toLowerCase() === type.toLowerCase())
     if (ofType.length === 0) return 'missing'
-    return ofType.some((d) => !d.expiry_date || d.expiry_date >= today) ? 'ready' : 'expired'
+    return ofType.some((d) => !d.expiry_date || d.expiry_date >= today()) ? 'ready' : 'expired'
   }
   const items = docs && current.doc_types.map((type) => ({ type, status: status(type) }))
   const ready = items?.filter((i) => i.status === 'ready').length

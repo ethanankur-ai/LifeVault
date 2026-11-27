@@ -1,14 +1,15 @@
 // "Renew soon" note: documents expiring in the next 60 days (GET /api/documents/expiring).
 import { useEffect, useState } from 'react'
 import { api } from '../lib/api.js'
-import { daysLeft } from '../lib/dates.js'
+import { daysLeft, today } from '../lib/dates.js'
 
 export default function ExpiringPanel({ members }) {
   const [docs, setDocs] = useState([])
 
   useEffect(() => {
+    // Sends this device's calendar day so the 60-day window matches the "days left" shown below.
     // Silent on failure: the document list below shows any API error.
-    api('/api/documents/expiring').then(setDocs).catch(() => {})
+    api(`/api/documents/expiring?today=${today()}`).then((rows) => setDocs(rows.filter((d) => daysLeft(d.expiry_date) >= 0))).catch(() => {})
   }, [])
 
   if (docs.length === 0) return null

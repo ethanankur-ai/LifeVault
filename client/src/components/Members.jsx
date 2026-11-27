@@ -1,6 +1,7 @@
 // Lists family members and adds new ones (POST /api/members).
 import { useState } from 'react'
 import { api } from '../lib/api.js'
+import { today } from '../lib/dates.js'
 
 export default function Members({ members, onChange }) {
   const [form, setForm] = useState({ name: '', relation: '', dob: '' })
@@ -11,10 +12,12 @@ export default function Members({ members, onChange }) {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    const name = form.name.trim() // "required" alone accepts a name of only spaces
+    if (!name) return setError('Enter the member\'s name.')
     setBusy(true)
     setError('')
     try {
-      await api('/api/members', { method: 'POST', body: form })
+      await api('/api/members', { method: 'POST', body: { ...form, name, relation: form.relation.trim() } })
       setForm({ name: '', relation: '', dob: '' })
       onChange() // App reloads the list so every tab sees the new member
     } catch (err) {
@@ -36,7 +39,7 @@ export default function Members({ members, onChange }) {
                 {m.name.slice(0, 2)}
               </span>
               <div className="min-w-0">
-                <p className="font-semibold">{m.name}</p>
+                <p className="font-semibold break-words">{m.name}</p>
                 <p className="text-sm text-muted">
                   {m.relation || 'Family'}
                   {m.dob && <span className="font-mono"> · {m.dob}</span>}
@@ -51,15 +54,15 @@ export default function Members({ members, onChange }) {
         <h2 className="label sm:col-span-4">Add a member</h2>
         <label className="space-y-1.5">
           <span className="label">Name</span>
-          <input className="field" required value={form.name} onChange={set('name')} />
+          <input className="field" required maxLength={100} value={form.name} onChange={set('name')} />
         </label>
         <label className="space-y-1.5">
           <span className="label">Relation</span>
-          <input className="field" value={form.relation} onChange={set('relation')} placeholder="Mother, Son…" />
+          <input className="field" maxLength={50} value={form.relation} onChange={set('relation')} placeholder="Mother, Son…" />
         </label>
         <label className="space-y-1.5">
           <span className="label">Date of birth</span>
-          <input className="field" type="date" value={form.dob} onChange={set('dob')} />
+          <input className="field" type="date" max={today()} value={form.dob} onChange={set('dob')} />
         </label>
         <button disabled={busy} className="btn">
           {busy ? 'Adding…' : 'Add member'}

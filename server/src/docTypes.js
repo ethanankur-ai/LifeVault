@@ -10,7 +10,7 @@ export function mergeTypes(names) {
   const seen = new Set(DOC_TYPES.map((t) => t.toLowerCase()));
   const custom = [];
   for (const raw of names) {
-    const name = typeof raw === 'string' ? raw.trim() : '';
+    const name = typeof raw === 'string' ? raw.trim().slice(0, 60) : '';
     if (!name || seen.has(name.toLowerCase())) continue;
     seen.add(name.toLowerCase());
     custom.push(name);
